@@ -1,0 +1,20 @@
+{
+  "name": "@agentcreds/sdk-win32-x64-msvc",
+  "version": "0.1.1",
+  "description": "Prebuilt win32-x64-msvc binding for @agentcreds/sdk. Install @agentcreds/sdk instead - npm selects this package automatically for the matching platform.",
+  "main": "agentcreds.win32-x64-msvc.node",
+  "files": [
+    "agentcreds.win32-x64-msvc.node"
+  ],
+  "license": "Apache-2.0",
+  "repository": "https://github.com/agentcreds/agentcreds",
+  "engines": {
+    "node": ">= 18"
+  },
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ]
+}

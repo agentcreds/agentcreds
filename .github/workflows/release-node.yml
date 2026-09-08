@@ -62,10 +62,28 @@ jobs:
         with:
           pattern: bindings-*
           path: agentcreds-node/artifacts
+      # `napi artifacts` distributes the downloaded .node files into npm/<platform>/.
+      # This step used to tolerate a missing script with an `|| echo`, which is how
+      # 0.1.0 shipped as a parent package whose optionalDependencies did not exist:
+      # every install worked and every require threw. Nothing here is optional now.
       - name: Assemble platform packages
         run: |
           npm install
-          npm run artifacts || echo "no 'artifacts' script - ensure prebuilds are placed for publish"
+          npm run artifacts
+      - name: Every platform package must hold its binary
+        run: |
+          missing=0
+          for d in npm/*/; do
+            plat=$(basename "$d")
+            if ! ls "$d"agentcreds.*.node >/dev/null 2>&1; then
+              echo "::error title=Missing binding::npm/$plat has no .node artifact - refusing to publish a package that throws on require"
+              missing=1
+            fi
+          done
+          exit $missing
+      # `npm publish` on the parent triggers prepublishOnly -> `napi prepublish -t npm`,
+      # which publishes each npm/<platform> package first, then the parent (with its
+      # optionalDependencies pointing at them).
       - name: Publish to npm (with provenance)
         run: npm publish --provenance --access public
         env:

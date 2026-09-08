@@ -92,10 +92,21 @@ jobs:
       # verifies the one wheel they actually installed:
       #
       #     gh attestation verify agentcreds-<v>-cp38-abi3-<plat>.whl --repo <owner>/<repo>
+      # Skipped on REHEARSALS: persisting attestations requires a public repo or a
+      # paid plan, and rehearsals run while the repo is still private (the first one
+      # failed on exactly that). Real releases are tag-triggered from the public
+      # repository, where attestation works and remains mandatory - the `if` keys on
+      # the trigger, not repo visibility, so a real release on a private repo still
+      # fails loudly rather than silently shipping unattested wheels.
       - name: Attest build provenance
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.rehearsal) }}
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: dist/*.whl
+
+      - name: Note the skipped attestation
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.rehearsal }}
+        run: echo "::warning title=Attestation skipped::Rehearsal run - wheels are NOT attested. Real (tag) releases attest before publishing."
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1

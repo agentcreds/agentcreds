@@ -8,6 +8,17 @@ between minor versions.
 
 ## [Unreleased]
 
+## [node-0.1.1] - 2026-09-08
+
+### Fixed
+
+- **`@agentcreds/sdk` 0.1.1** - 0.1.0 on npm published the parent package without its
+  per-platform binding packages, so installation succeeded and `require` threw on
+  every platform. 0.1.1 ships the four platform packages
+  (`@agentcreds/sdk-{linux-x64-gnu,darwin-x64,darwin-arm64,win32-x64-msvc}`) and the
+  parent's `optionalDependencies` pointing at them. 0.1.0 is deprecated on npm; no
+  other component is affected.
+
 ## [0.1.0] - 2026-09-07
 
 Initial public release of the AgentCreds SDK. (Re-cut from the unpublished

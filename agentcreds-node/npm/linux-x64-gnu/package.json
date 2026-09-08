@@ -1,0 +1,23 @@
+{
+  "name": "@agentcreds/sdk-linux-x64-gnu",
+  "version": "0.1.1",
+  "description": "Prebuilt linux-x64-gnu binding for @agentcreds/sdk. Install @agentcreds/sdk instead - npm selects this package automatically for the matching platform.",
+  "main": "agentcreds.linux-x64-gnu.node",
+  "files": [
+    "agentcreds.linux-x64-gnu.node"
+  ],
+  "license": "Apache-2.0",
+  "repository": "https://github.com/agentcreds/agentcreds",
+  "engines": {
+    "node": ">= 18"
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "libc": [
+    "glibc"
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "@agentcreds/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Verifiable, attenuable delegation for AI agents - org-rooted and verified offline",
   "main": "index.js",
   "types": "index.d.ts",
@@ -35,5 +35,11 @@
   "devDependencies": {
     "@napi-rs/cli": "^2.18.0",
     "typedoc": "^0.25.0"
+  },
+  "optionalDependencies": {
+    "@agentcreds/sdk-linux-x64-gnu": "0.1.1",
+    "@agentcreds/sdk-darwin-x64": "0.1.1",
+    "@agentcreds/sdk-darwin-arm64": "0.1.1",
+    "@agentcreds/sdk-win32-x64-msvc": "0.1.1"
   }
 }

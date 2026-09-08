@@ -1,0 +1,20 @@
+{
+  "name": "@agentcreds/sdk-darwin-arm64",
+  "version": "0.1.1",
+  "description": "Prebuilt darwin-arm64 binding for @agentcreds/sdk. Install @agentcreds/sdk instead - npm selects this package automatically for the matching platform.",
+  "main": "agentcreds.darwin-arm64.node",
+  "files": [
+    "agentcreds.darwin-arm64.node"
+  ],
+  "license": "Apache-2.0",
+  "repository": "https://github.com/agentcreds/agentcreds",
+  "engines": {
+    "node": ">= 18"
+  },
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ]
+}
