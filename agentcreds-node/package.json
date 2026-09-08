@@ -1,0 +1,39 @@
+{
+  "name": "@agentcreds/sdk",
+  "version": "0.1.0",
+  "description": "Verifiable, attenuable delegation for AI agents - org-rooted and verified offline",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/agentcreds/agentcreds",
+  "engines": {
+    "node": ">= 16"
+  },
+  "napi": {
+    "name": "agentcreds",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "aarch64-apple-darwin"
+      ]
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "docs": "typedoc",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "node examples/quickstart.js && node --test test/conformance.test.js test/accountability.test.js",
+    "test:conformance": "node --test test/conformance.test.js",
+    "version": "napi version"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0",
+    "typedoc": "^0.25.0"
+  }
+}

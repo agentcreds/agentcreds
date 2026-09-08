@@ -1,0 +1,72 @@
+name: Release (npm - @agentcreds/sdk)
+
+# Builds the native napi addon for each platform and publishes @agentcreds/sdk to
+# npm with provenance (id-token: write). Requires an NPM_TOKEN secret (automation
+# token) on this repo. Trigger by pushing a tag like `node-v0.1.0`.
+#
+# NOTE: the per-platform build/publish here follows the standard @napi-rs layout
+# (`npm run build -- --target <triple>` producing platform packages). Align the
+# target matrix and the publish step with agentcreds-node/package.json if it differs.
+on:
+  push:
+    tags: ["node-v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: build / ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  target: x86_64-unknown-linux-gnu }
+          - { os: macos-latest,   target: x86_64-apple-darwin }
+          - { os: macos-latest,   target: aarch64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    defaults:
+      run:
+        working-directory: agentcreds-node
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+      - name: Build addon
+        run: |
+          npm install
+          npm run build -- --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: bindings-${{ matrix.target }}
+          path: agentcreds-node/*.node
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # npm provenance
+    defaults:
+      run:
+        working-directory: agentcreds-node
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: bindings-*
+          path: agentcreds-node/artifacts
+      - name: Assemble platform packages
+        run: |
+          npm install
+          npm run artifacts || echo "no 'artifacts' script - ensure prebuilds are placed for publish"
+      - name: Publish to npm (with provenance)
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

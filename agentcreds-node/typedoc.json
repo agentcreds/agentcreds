@@ -1,0 +1,10 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["index.d.ts"],
+  "out": "docs",
+  "name": "@agentcreds/sdk",
+  "readme": "README.md",
+  "includeVersion": true,
+  "githubPages": false,
+  "excludeExternals": true
+}

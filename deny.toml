@@ -1,0 +1,108 @@
+# Supply-chain policy for the AgentCreds **SDK tier** (Apache-2.0), enforced in CI
+# by `cargo deny check`. Kept separate from the commercial tier's policy so each
+# ignore list matches only the advisories its own dependency tree actually hits
+# (a shared config emits spurious "advisory-not-detected" warnings). The two files
+# share the bans/sources policy; the license allow-list intentionally diverges - the
+# SDK (Apache-2.0) does not allow the commercial tier's source-available license.
+
+[advisories]
+version = 2
+# Only flag UNMAINTAINED advisories for crates we depend on directly; deep
+# transitive unmaintained crates (derivative, proc-macro-error, serde_cbor,
+# rustls-pemfile - all pulled via ssi/reqwest) aren't ours to fix.
+unmaintained = "workspace"
+# Triaged advisories with no clean fix yet. Each MUST have a justification and a
+# fix/track note; revisit on every dependency bump.
+ignore = [
+  # RSA "Marvin Attack" timing side-channel - no upstream fix. Reached transitively
+  # via `ssi` for RSA-keyed JWK/DID *verification* (public-key ops); the attack
+  # targets RSA private-key decryption with attacker-chosen ciphertext + timing,
+  # which is not how AgentCreds uses it.
+  "RUSTSEC-2023-0071",
+]
+
+[licenses]
+version = 2
+# Permissive licenses we accept in the dependency graph, plus the SDK's own license
+# (Apache-2.0). Copyleft (GPL/AGPL/LGPL) is intentionally absent -> it fails the
+# build, keeping strong-copyleft code out of the SDK.
+allow = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "MIT",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+  "CC0-1.0",
+  "OpenSSL",
+  # The Mozilla CA root-cert bundle data (webpki-root-certs) - a permissive data
+  # license, not code copyleft.
+  "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.8
+exceptions = []
+# Do NOT warn about allow-list entries this graph never hits. The resolved graph is
+# platform- and feature-dependent, so an entry unused on one runner is required on
+# another - `OpenSSL` appears only where `native-tls` resolves to OpenSSL (Linux),
+# never on the Windows runner, which uses schannel. Pruning the "unused" ones to
+# silence the warning would fail CI on a different OS. The list stays explicit; the
+# noise goes.
+unused-allowed-license = "allow"
+
+[bans]
+# Duplicate versions are advisory (transitive deps commonly disagree).
+multiple-versions = "warn"
+# A wildcard dependency is a hard `cargo publish` blocker, not a style issue, so it
+# fails rather than warns. We had exactly one - `agentcreds-resolvers` depending on
+# `agentcreds-core` by bare `path`, which resolves to `*` for a crates.io consumer -
+# and it sat as a warning long enough to reach a published export. Deny keeps it
+# impossible to reintroduce silently.
+wildcards = "deny"
+allow = []
+deny = []
+
+# Duplicate versions we have TRIAGED and accept, pinned to the exact stale version so
+# any NEW duplicate still warns. This is not blanket silencing: every entry names why
+# it is here and what removes it.
+#
+# The first group comes from `biscuit-auth` (the delegation token format), which pins a
+# generation-old hashing stack. NOTE: upgrading biscuit-auth 4 -> 6 did NOT clear these.
+# It dropped `getrandom 0.1` and `wasi 0.9` but kept base64 0.13 / sha2 0.9 / digest 0.9 /
+# block-buffer 0.9 and ADDED der 0.6 / pkcs8 0.9 / spki 0.6. Measured, not assumed - the
+# "modernise the crypto stack" argument for that upgrade did not survive contact. Clearing
+# these needs upstream to move, not us.
+#
+# The second group is platform / proc-macro layering that no dependency choice of ours
+# resolves: two build-script generations coexisting in one graph is normal and carries
+# no runtime cost for us.
+skip = [
+  # -- via biscuit-auth --
+  { crate = "base64@0.13.1",       reason = "biscuit-auth; rest of the graph is on 0.22" },
+  { crate = "sha2@0.9.9",          reason = "biscuit-auth; rest of the graph is on 0.10" },
+  { crate = "digest@0.9.0",        reason = "biscuit-auth via sha2 0.9" },
+  { crate = "block-buffer@0.9.0",  reason = "biscuit-auth via sha2 0.9" },
+  { crate = "pkcs8@0.9.0",         reason = "biscuit-auth 6 key encoding; rest of the graph is on 0.10" },
+  { crate = "der@0.6.1",           reason = "biscuit-auth 6 via pkcs8 0.9" },
+  { crate = "spki@0.6.0",          reason = "biscuit-auth 6 via pkcs8 0.9" },
+  # -- dev-only --
+  # Our RUNTIME getrandom is 0.2 (a direct dep, pinned by rand 0.8 / rand_core 0.6).
+  # 0.4 arrives only through proptest -> tempfile, a dev-dependency, so it is never in
+  # a shipped artifact. Skipping the dev-side version keeps the runtime one visible:
+  # if 0.2 ever became the odd one out, that WOULD warn.
+  { crate = "getrandom@0.4.2",     reason = "dev-only, via proptest -> tempfile; runtime is 0.2" },
+  # -- platform / proc-macro layering --
+  { crate = "syn@1.0.109",         reason = "older derive macros in the graph; syn 2 elsewhere" },
+  { crate = "wit-bindgen@0.51.0",  reason = "wasip3 vs wasip2 shims; not built on our targets" },
+  { crate = "core-foundation@0.9.4", reason = "macOS TLS layering under native-tls/reqwest" },
+  { crate = "windows-sys@0.52.0",  reason = "Windows shims at two generations under tokio/mio" },
+]
+
+[sources]
+# Only crates.io and in-repo path deps; reject unknown registries and git sources.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

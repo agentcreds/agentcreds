@@ -1,0 +1,22 @@
+{
+  "name": "@agentcreds/runtime",
+  "version": "0.1.0",
+  "description": "Runtime AgentCreds agent-identity enforcement for Node - agent-to-agent (A2A) verification ONLY. Not an MCP policy enforcement point: R10 gates, step-up approval and the MCP enforcer are Python-only by design. Built on @agentcreds/sdk",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/agentcreds/agentcreds",
+  "engines": {
+    "node": ">=16"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "dependencies": {
+    "@agentcreds/sdk": "^0.1.0"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

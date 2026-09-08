@@ -1,0 +1,34 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "agentcreds"
+version = "0.1.0"
+description = "Verifiable, attenuable delegation for AI agents - org-rooted and verified offline"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.optional-dependencies]
+# API-reference generation: `pip install -e ".[docs]"` then `pdoc agentcreds`.
+docs = ["pdoc>=14"]
+
+[project.urls]
+# The canonical public slug, resolved 2026-07-28 (see publish/overlay/OVERLAY.md): the
+# release plan couples registry publication with this repository going public, so at the
+# only moment this metadata is visible, the link is live. Do NOT soften to an org link -
+# that breaks the deliberate unification across the 9 SDK package-metadata files.
+Repository = "https://github.com/agentcreds/agentcreds"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "agentcreds"

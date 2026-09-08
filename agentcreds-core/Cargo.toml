@@ -1,0 +1,138 @@
+[package]
+name = "agentcreds-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "Cryptographic core for AgentCreds - verifiable, attenuable delegation for AI agents, verified offline"
+license = "Apache-2.0"
+repository = "https://github.com/agentcreds/agentcreds"
+keywords = ["ssi", "did", "verifiable-credentials", "ai-agents", "zero-trust"]
+categories = ["cryptography", "authentication"]
+
+[lib]
+name = "agentcreds_core"
+crate-type = ["lib", "cdylib"]  # cdylib for FFI (PyO3 / napi-rs)
+
+# Render the BBS+ module in the hosted API docs (docs.rs).
+[package.metadata.docs.rs]
+features = ["bbs"]
+
+[features]
+default = ["std"]
+std = []
+# Enable FFI export surface (used by PyO3 / napi-rs build scripts)
+ffi = ["uniffi"]
+# Enable BBS+ selective disclosure (heavier dependency, opt-in)
+bbs = ["bbs_plus", "ark-bls12-381", "ark-ec", "ark-ff", "ark-serialize", "ark-std", "blake2"]
+# IETF SD-JWT selective disclosure of capability-credential claims. Opt-in interop
+# format for verifier ecosystems that expect IETF-style tokens - it is NOT on the
+# Biscuit runtime path (no internal caller), so it is off by default to keep the
+# core verification surface to Biscuit + the anchor VC. Enable it only when a
+# verifier ecosystem actually consumes SD-JWT-VC agent credentials. (Uses only
+# existing core dependencies - no extra deps.)
+sd-jwt = []
+# Networked DID resolvers (did:web, DIF Universal Resolver, cheqd/indy) live in the
+# separate `agentcreds-resolvers` crate so the core has no network dependency and is
+# unconditionally offline. They implement `did::DidResolver` and drop into the
+# `UniversalResolver` dispatcher.
+# Enable property-based tests (proptest) - see the `proptest_tests` modules
+proptest = []
+
+[dependencies]
+# --- Asymmetric cryptography ---
+ed25519-dalek   = { version = "2.1",  features = ["rand_core", "serde"] }
+p256            = { version = "0.13", features = ["ecdsa", "pkcs8", "serde"] }
+k256            = { version = "0.13", features = ["ecdsa"] }          # secp256k1 (wallet compat)
+rsa             = { version = "0.9", features = ["sha2"] }            # RS256 JWT verification (OIDC IdPs)
+
+# --- Signatures & encoding ---
+signature       = "2.2"
+ecdsa           = "0.16"
+base64ct         = { version = "1.6", features = ["alloc"] }
+hex             = { version = "0.4", features = ["serde"] }
+
+# --- Hashing ---
+sha2            = "0.10"
+sha3            = "0.10"
+
+# --- Random number generation ---
+rand            = "0.8"
+rand_core       = { version = "0.6", features = ["getrandom"] }
+getrandom       = { version = "0.2", features = ["js"] }
+
+# --- Serialization ---
+serde           = { version = "1.0", features = ["derive"] }
+serde_json      = "1.0"
+ciborium        = "0.2.2"          # compact binary encoding for tokens
+
+# --- Biscuit tokens (delegation engine) ---
+biscuit-auth    = "6.0"
+
+# --- Time ---
+chrono          = { version = "0.4", features = ["serde"] }
+
+# --- Status List 2021 (revocation) ---
+# Implemented internally; uses bit manipulation on a DEFLATE-compressed bitstring
+bitvec          = "1.0"
+flate2          = "1.0"       # DEFLATE compression for the OAuth status list bitstring
+
+# --- Error handling ---
+thiserror       = "1.0"
+
+# --- Configuration (TOML file + env-var loading) ---
+toml            = "0.8"
+
+# --- Zeroize sensitive key material on drop ---
+zeroize         = { version = "1.7", features = ["derive"] }
+
+# --- base58 for did:key multibase encoding ---
+bs58            = "0.4"
+
+# --- Optional: BBS+ selective disclosure (unlinkable presentations) ---
+# arkworks 0.3 ecosystem (BLS12-381 pairings); all gated behind `bbs`.
+bbs_plus        = { version = "0.7", optional = true }
+ark-bls12-381   = { version = "0.3", optional = true }
+ark-ec          = { version = "0.3", optional = true }
+ark-ff          = { version = "0.3", optional = true }
+ark-serialize   = { version = "0.3", optional = true }
+ark-std         = { version = "0.3", optional = true }
+# blake2 0.9 (digest 0.9) - matches bbs_plus's hash-to-curve `Digest` bound.
+blake2          = { version = "0.9", optional = true }
+
+# --- Optional: FFI codegen (UniFFI) ---
+uniffi          = { version = "0.27", optional = true }
+
+[dev-dependencies]
+tokio           = { version = "1", features = ["full"] }
+proptest        = "1.4"           # property-based testing for crypto primitives
+hex-literal     = "0.4"
+criterion       = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "did_benchmarks"
+harness = false
+
+[[bench]]
+name = "vc_benchmarks"
+harness = false
+
+[[bench]]
+name = "delegation_benchmarks"
+harness = false
+
+[[bench]]
+name = "revocation_benchmarks"
+harness = false
+
+[[bench]]
+name = "registry_benchmarks"
+harness = false
+
+[profile.release]
+opt-level     = 3
+lto           = "fat"
+codegen-units = 1
+panic         = "abort"           # smaller binary, no unwinding in prod
+
+[profile.dev]
+opt-level = 1                     # faster incremental builds in dev

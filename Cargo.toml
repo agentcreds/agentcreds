@@ -1,0 +1,7 @@
+# SDK tier (Apache-2.0). The Rust crate is the cargo workspace member; the
+# napi/pyo3 bindings build via their own toolchains (napi-rs / maturin) and the
+# Python/Node runtimes have no Cargo manifest, so they're excluded here.
+[workspace]
+resolver = "2"
+members = ["agentcreds-core", "agentcreds-resolvers"]
+exclude = ["agentcreds-node", "agentcreds-py"]

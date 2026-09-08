@@ -1,0 +1,53 @@
+# Secret-scanning policy for the public AgentCreds SDK tree.
+#
+# `publish/export.sh` runs `gitleaks detect --source <tree> --no-git` as the deep half of
+# its leak gate. gitleaks auto-discovers this file at the root of the scanned tree, so the
+# export gate and the public repo's own scans share exactly one policy.
+#
+# This file only ever ADDS an exemption on top of the upstream ruleset. It must never
+# disable or weaken a rule.
+[extend]
+useDefault = true
+
+# -- conformance/vectors.json ----------------------------------------------------------
+# The cross-language golden vectors are written by
+#     cargo run -p agentcreds-core --example gen_conformance_vectors -- conformance/vectors.json
+# and hold only PUBLIC cryptographic artifacts: did:key identifiers (public keys), CBOR
+# credentials / presentations / runtime tokens, Ed25519 signatures, payload hashes, and
+# status lists. No private key, seed, or bearer credential appears in the file - every
+# field name in it is part of the published wire format.
+#
+# gitleaks' `generic-api-key` rule matches 8 values there on Shannon entropy alone, purely
+# because they are long hex/base64 blobs. Exempting the path (rather than pinning the 8
+# finding fingerprints) keeps the gate stable across regeneration, which is the only way
+# this file ever changes.
+#
+# TRADE-OFF, accepted deliberately: this one path is not secret-scanned. The risk is
+# bounded because nothing hand-edits the file - its contents are fully determined by the
+# generator above. Do NOT add another path here without the same justification, and never
+# add a path that a human writes by hand.
+[[allowlists]]
+description = "conformance/vectors.json - generator-produced public cryptographic test artifacts"
+targets = ["path"]
+paths = ['''conformance/vectors\.json''']
+
+# -- agentcreds-core/tests/fixtures/wire_compat.json -----------------------------------
+# The golden delegation-token fixture, written by
+#     cargo run -p agentcreds-core --example gen_fixture
+# and holding only PUBLIC artifacts: did:key identifiers (public keys), one CBOR
+# delegation token, and a JSON credential with its signature. Verified: the credential
+# decodes to context/subject/issuer/proof with no 'private', 'secret' or 'seed' field,
+# and every value gitleaks flags is a `z6Mk...` did:key - the multicodec prefix for an
+# Ed25519 PUBLIC key. did:key cannot encode a private key at all.
+#
+# gitleaks matches it on Shannon entropy alone, after hex-decoding the blobs one and two
+# levels deep (`decoded:hex decode-depth:2`), which no amount of formatting avoids.
+#
+# The fixture was deliberately SPLIT OUT of tests/biscuit_wire_compat.rs so that this
+# exemption covers only generator-produced data - the test source, which humans edit,
+# stays fully scanned. That is the rule stated above: never exempt a path a human writes
+# by hand. Keep it that way; do not inline the constants back into the test.
+[[allowlists]]
+description = "tests/fixtures/wire_compat.json - generator-produced public token fixture"
+targets = ["path"]
+paths = ['''agentcreds-core/tests/fixtures/wire_compat\.json''']

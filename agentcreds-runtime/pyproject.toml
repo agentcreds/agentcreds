@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentcreds-runtime"
+version = "0.1.0"
+description = "Runtime AgentCreds agent-identity enforcement for tool calls - MCP middleware and agent-to-agent (A2A) verification"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.8"
+dependencies = [
+    "agentcreds>=0.1.0",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Security",
+    "Framework :: AsyncIO",
+]
+
+[project.optional-dependencies]
+# The official MCP Python SDK, needed only for the FastMCP adapter.
+# Upper bound is deliberate. mcp 2.0 renamed the streamable-http client entry point
+# (`streamablehttp_client` -> `streamable_http_client`) and is a breaking major. With an
+# unbounded `>=1.2.0`, a fresh `pip install agentcreds-runtime[mcp]` silently resolved to
+# 2.0 and failed at import - the same rebuild reproduced a working image as a broken one
+# on 2026-07-30. Raise the cap only alongside code verified against 2.x.
+mcp = ["mcp>=1.2.0,<2"]
+# Cedar policy engine, needed only for the Cedar-backed policy hook
+# (agentcreds_runtime.cedar). The runtime works without it (predicate policies).
+cedar = ["cedarpy>=3.0"]
+# Redis client, needed only for the shared multi-replica stores
+# (RedisUsageStore / RedisReplayGuard / RedisSessionStore). Single-replica
+# deployments use the in-memory stores and do not need this.
+redis = ["redis>=5"]
+test = ["pytest>=7.0"]
+
+[project.urls]
+Repository = "https://github.com/agentcreds/agentcreds"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentcreds_runtime"]

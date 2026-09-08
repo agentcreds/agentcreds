@@ -1,0 +1,66 @@
+# Accepted equivalent mutants on the authorization hot path.
+#
+# WHY THIS FILE EXISTS
+# cargo-mutants exits non-zero if ANY mutant survives. Four survivors on this path are
+# provably equivalent - the mutated code cannot be distinguished by behaviour, so no test
+# can kill them - and they are triaged in MUTATION-TRIAGE.md. Without these exclusions the
+# nightly fails permanently, and a permanently-red job is one nobody reads: a genuine new
+# survivor would hide among the accepted ones. Excluding them restores the signal.
+#
+# WHY line:col AND NOT the description alone
+# The descriptions are NOT unique. Within these same functions:
+#   "replace > with >= in DelegationToken::verify_inner"                    matches 2
+#   "delete ! in DelegationToken::verify_rooted_gated_with_directory"       matches 2
+#   "delete ! in DelegationToken::verify_rooted_inner"                      matches 3
+# and the siblings are REAL checks - the depth bound, the unrecognized-gate-kind
+# fail-closed, the scope-widening subset test. A description-only regex would silently
+# stop testing them, which is the opposite of what this file is for.
+#
+# BECAUSE line numbers drift, the workflow asserts that these patterns match EXACTLY four
+# mutants. If an edit moves a line, the count changes and the job fails loudly rather than
+# quietly excluding the wrong thing (or nothing). Re-triage and update both places.
+#
+# DRIFT LOG: 2026-09-06 - all three delegation pins moved ~+145 lines (the spend cap of
+# 2026-09-03 added 155 lines; the TTL-overflow guard added more). The count guard caught
+# it on the first CI run of the widened scope. Every new line was re-verified against
+# source CONTENT before re-pinning - the neighbouring candidates are the depth bound,
+# the unrecognized-gate-kind fail-closed, the root-scope subset test and the is_empty
+# guard, all REAL checks that must keep being tested.
+#
+# RETIRED 2026-09-06: the verify_inner expiry-boundary exclusion (1057:20). CI's first
+# complete shard pass showed `verify_at` was untested; the kill test written for it
+# controls `now`, which makes the boundary deterministically testable - so the mutant is
+# no longer equivalent, and the exclusion came out the same day the seam was proven.
+#
+# RETIRED 2026-09-07: the sd_jwt verify_presentation boundary (368:19) - the last of the
+# three clock-boundary equivalents. `verify_presentation_at` threads `now` through, and
+# the boundary test pins the instant exactly. All three retirements followed the same
+# arc: "no seam exists" was true until someone built the seam, which cost ~10 lines each.
+
+exclude_re = [
+  # revocation.rs - `raw_len*8 / bits` vs `* bits`. The library only emits bits == 1
+  # lists, where /1 and *1 are identical. Killable only if multi-bit status lists are
+  # ever emitted (the format reserves 2/4/8); add a parse test asserting `size` then.
+  "revocation\\.rs:207:46: replace / with \\* in RevocationList::from_status_list_token",
+
+  # delegation - the OBO `is_empty` guard around the resource-authority re-check.
+  # Equivalent FOR THE SAME REASON as the inner re-check below (1403): the guarded
+  # block's observable effect needs a token whose resources violate its own
+  # credential's authority, and `verify_rooted_inner` binds token to credential by
+  # `vc_id` (a mismatched credential fails earlier), while `mint` refuses to build
+  # such a token. Only a forged biscuit distinguishes either mutant. Found by CI's
+  # first complete shard pass, 2026-09-06. NOT the principal-mismatch check above it.
+  "delegation/mod\\.rs:1401:20: delete ! in DelegationToken::verify_rooted_inner",
+
+  # delegation - the `!effective.contains(g)` DEDUP guard. Deleting it pushes a duplicate
+  # gate onto `effective`, which yields the identical allow/deny decision. NOT the
+  # unrecognized-gate-kind check in the same function, which fails closed and is real.
+  "delegation/mod\\.rs:1261:41: delete ! in DelegationToken::verify_rooted_gated_with_directory",
+
+  # delegation - the OBO resource-authority RE-check. `mint` already rejects
+  # out-of-authority resources, so no token built through the API can distinguish it;
+  # only a forged biscuit would. Defence in depth over what mint enforces. NOT the
+  # scope-widening subset test or the is_empty guard in the same function.
+  "delegation/mod\\.rs:1403:28: delete ! in DelegationToken::verify_rooted_inner",
+
+]

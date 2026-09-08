@@ -1,0 +1,104 @@
+name: Release (PyPI - agentcreds)
+
+# Builds native wheels for the Python bindings and publishes them to PyPI via Trusted
+# Publishing (OIDC) - no stored API token. One-time setup on pypi.org: project
+# "agentcreds" -> add a trusted publisher naming this repository, this filename, and
+# environment "pypi". Trigger by pushing a tag like `py-v0.1.0`.
+#
+# NO SDIST, deliberately (rewritten 2026-09-06 - the previous revision built one). The
+# sdist would contain only `agentcreds-py/`, whose Cargo.toml path-depends on
+# `../agentcreds-core` - a path that exists in this repository and nowhere else. pip on
+# any platform without a matching binary wheel PREFERS an sdist and would fail at build
+# time on every consumer machine, which is strictly worse than a clean "no matching
+# distribution". Binary abi3 wheels (cp38+) across the platform matrix are the product.
+on:
+  push:
+    tags: ["py-v*"]
+  # Dispatch = REHEARSAL against TestPyPI. Exercises the identical wheel matrix,
+  # attestation and trusted-publishing steps with only the destination changed. Mirror
+  # the one-time setup on TEST.pypi.org, with environment "testpypi". Run this from the
+  # preview repository before any real tag on the canonical one.
+  workflow_dispatch:
+    inputs:
+      rehearsal:
+        description: "Publish to TestPyPI instead of PyPI"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  wheels:
+    name: wheel / ${{ matrix.platform.os }} / ${{ matrix.platform.target }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { os: ubuntu-latest, target: x86_64, manylinux: auto }
+          - { os: ubuntu-latest, target: aarch64, manylinux: auto }
+          - { os: windows-latest, target: x64 }
+          - { os: macos-latest, target: universal2-apple-darwin }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: PyO3/maturin-action@v1
+        with:
+          working-directory: agentcreds-py
+          target: ${{ matrix.platform.target }}
+          manylinux: ${{ matrix.platform.manylinux || '' }}
+          args: --release --out dist
+      # Smoke-test the wheel that was just built, on the platform that built it. This
+      # is deliberately in the RELEASE path: macOS was removed from the routine CI
+      # matrix for cost (10x billing), so this step is the only executable evidence
+      # behind the macOS support claim - a few billed minutes per release, not per
+      # push. Skipped only where the runner cannot run the target it cross-built
+      # (linux-aarch64 on an x86_64 runner).
+      - name: Smoke-test the built wheel
+        if: matrix.platform.target != 'aarch64'
+        shell: bash
+        working-directory: agentcreds-py
+        run: |
+          python3 -m pip install --force-reinstall dist/*.whl
+          python3 examples/quickstart.py
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: wheels-${{ matrix.platform.os }}-${{ matrix.platform.target }}
+          path: agentcreds-py/dist
+          if-no-files-found: error
+
+  publish:
+    name: publish
+    needs: wheels
+    runs-on: ubuntu-latest
+    # The environment gates which trusted publisher the OIDC token can satisfy; the
+    # rehearsal uses a separate one so a dispatch can NEVER publish to real PyPI even
+    # if the URL below were wrong.
+    environment: ${{ (github.event_name == 'workflow_dispatch' && inputs.rehearsal) && 'testpypi' || 'pypi' }}
+    permissions:
+      id-token: write # OIDC for PyPI Trusted Publishing, and for the attestor
+      attestations: write # build provenance
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist
+
+      # Attest BEFORE publishing: attesting after a successful upload leaves a window in
+      # which the artifact is downloadable and unattested. Each wheel is attested
+      # individually - they are separate artifacts with separate digests, and a consumer
+      # verifies the one wheel they actually installed:
+      #
+      #     gh attestation verify agentcreds-<v>-cp38-abi3-<plat>.whl --repo <owner>/<repo>
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*.whl
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          repository-url: ${{ (github.event_name == 'workflow_dispatch' && inputs.rehearsal) && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}

@@ -1,0 +1,123 @@
+{
+ "format": 1,
+ "profile": "agentcreds-jcs-v1",
+ "spec": "RFC 8785 (JSON Canonicalization Scheme)",
+ "note": "Shared cross-language vectors. Every runtime must emit exactly expected_jcs for value. Generated from agentcreds-runtime/tests/test_jcs_canonicalization.py (VECTORS) - regenerate there, not here.",
+ "cases": [
+  {
+   "value": {
+    "q": "caf\u00e9"
+   },
+   "expected_jcs": "{\"q\":\"caf\u00e9\"}"
+  },
+  {
+   "value": {
+    "name": "na\u00efve r\u00e9sum\u00e9"
+   },
+   "expected_jcs": "{\"name\":\"na\u00efve r\u00e9sum\u00e9\"}"
+  },
+  {
+   "value": {
+    "amount": 1.0
+   },
+   "expected_jcs": "{\"amount\":1}"
+  },
+  {
+   "value": {
+    "n": 1
+   },
+   "expected_jcs": "{\"n\":1}"
+  },
+  {
+   "value": {
+    "big": 1e+21
+   },
+   "expected_jcs": "{\"big\":1e+21}"
+  },
+  {
+   "value": {
+    "just_under": 1e+20
+   },
+   "expected_jcs": "{\"just_under\":100000000000000000000}"
+  },
+  {
+   "value": {
+    "small": 1e-06
+   },
+   "expected_jcs": "{\"small\":0.000001}"
+  },
+  {
+   "value": {
+    "tiny": 1e-07
+   },
+   "expected_jcs": "{\"tiny\":1e-7}"
+  },
+  {
+   "value": {
+    "neg": -1.5
+   },
+   "expected_jcs": "{\"neg\":-1.5}"
+  },
+  {
+   "value": {
+    "b": 2,
+    "a": 1
+   },
+   "expected_jcs": "{\"a\":1,\"b\":2}"
+  },
+  {
+   "value": {
+    "nested": {
+     "z": [
+      1,
+      2,
+      {
+       "y": "\u00fcn\u00efcode"
+      }
+     ],
+     "a": true
+    }
+   },
+   "expected_jcs": "{\"nested\":{\"a\":true,\"z\":[1,2,{\"y\":\"\u00fcn\u00efcode\"}]}}"
+  },
+  {
+   "value": {
+    "quote": "he said \"hi\"",
+    "back": "a\\b",
+    "tab": "a\tb",
+    "nl": "a\nb"
+   },
+   "expected_jcs": "{\"back\":\"a\\\\b\",\"nl\":\"a\\nb\",\"quote\":\"he said \\\"hi\\\"\",\"tab\":\"a\\tb\"}"
+  },
+  {
+   "value": {
+    "ctrl": "a\u0001b"
+   },
+   "expected_jcs": "{\"ctrl\":\"a\\u0001b\"}"
+  },
+  {
+   "value": {
+    "nulls": [
+     null,
+     true,
+     false
+    ]
+   },
+   "expected_jcs": "{\"nulls\":[null,true,false]}"
+  },
+  {
+   "value": {
+    "empty_obj": {},
+    "empty_arr": []
+   },
+   "expected_jcs": "{\"empty_arr\":[],\"empty_obj\":{}}"
+  },
+  {
+   "value": {
+    "zero": 0,
+    "negzero": -0.0
+   },
+   "expected_jcs": "{\"negzero\":0,\"zero\":0}"
+  }
+ ]
+}

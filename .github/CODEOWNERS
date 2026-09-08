@@ -1,0 +1,38 @@
+# Code owners for the public AgentCreds SDK.
+#
+# Owners are auto-requested for review on PRs touching the matching paths. This file is
+# ADVISORY until branch protection on `main` enables "Require review from Code Owners" -
+# see the note at the bottom before turning that on.
+#
+# Two rules that bite:
+#   * LAST matching pattern wins (the opposite of .gitignore). Keep the catch-all first.
+#   * A team is silently ignored unless it is visible AND has explicit write access to
+#     this repo. `@agentcreds/maintainers` is visible ("closed") with write - verified
+#     2026-07-29. GitHub's web view of this file flags unresolvable owners.
+
+# Default owner for everything.
+*                     @agentcreds/maintainers
+
+# The file that decides ownership owns itself.
+/.github/CODEOWNERS   @agentcreds/maintainers
+
+# ---------------------------------------------------------------------------------------
+# Split these out when there is more than one maintainer. Separate teams with the same
+# single member add process without adding a second pair of eyes, so they stay commented
+# until the people exist. The paths are the ones worth guarding first:
+#
+#   /agentcreds-core/src/   @agentcreds/security   # crypto primitives, chain verification
+#   /conformance/           @agentcreds/security   # cross-language golden vectors
+#   /SECURITY.md            @agentcreds/security   # disclosure policy + contact
+#   /.github/workflows/     @agentcreds/release    # publish pipelines (supply chain)
+#   /deny.toml              @agentcreds/release    # dependency/license policy
+#   /Cargo.lock             @agentcreds/release    # pinned dependency graph
+#
+# The release paths matter independently of code review: the realistic supply-chain
+# attack is a contributor with legitimate write access altering the publish workflow,
+# not the library source.
+# ---------------------------------------------------------------------------------------
+
+# DO NOT enable "Require review from Code Owners" while there is a single maintainer:
+# GitHub forbids approving your own PR, so the rule would block every PR you open, with
+# admin bypass as the only escape. Turn it on when the second maintainer joins.

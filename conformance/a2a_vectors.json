@@ -1,0 +1,128 @@
+{
+  "format": 1,
+  "note": "Shared A2A-layer agreement vectors. Deterministic string/JSON contracts only - no keys, no clock; the cryptographic layer is proven by the core conformance vectors. Generated from the Python runtime (tests/gen_a2a_vectors.py) - regenerate there, never hand-edit. Octets bind OUTPUT is deliberately absent: the profile makes serialization holder-chosen, so only parse+semantic agreement is a contract.",
+  "cases": {
+    "header_names": {
+      "capability": "AgentCreds-A2A",
+      "principal": "AgentCreds-A2A-Principal",
+      "bound_args": "AgentCreds-A2A-Bound-Args",
+      "canon_profile": "AgentCreds-A2A-Canon-Profile"
+    },
+    "principal_scheme_prefix": "AgentCreds-A2A-Principal/1.",
+    "codes": {
+      "MALFORMED": "malformed_presentation",
+      "POSSESSION": "possession_failed",
+      "NOT_AUTHORIZED": "not_authorized",
+      "CREDENTIAL": "credential_invalid",
+      "REVOKED": "credential_revoked",
+      "PRINCIPAL": "principal_mismatch",
+      "UNBOUND": "argument_binding_required",
+      "UNTRUSTED_ISSUER": "untrusted_issuer",
+      "REPLAY": "replayed_presentation",
+      "CANON_PROFILE": "canonicalization_profile_mismatch",
+      "ARGS_MISMATCH": "argument_mismatch",
+      "BOUND_ARGS": "bound_arguments_invalid",
+      "DENIED": "access_denied"
+    },
+    "octets_profile": "agentcreds-octets-v1",
+    "max_bound_args_bytes": 65536,
+    "principal_headers": [
+      {
+        "token": "dGVzdA.dGVzdA.c2ln",
+        "header": "AgentCreds-A2A-Principal/1.ZEdWemRBLmRHVnpkQS5jMmxu"
+      },
+      {
+        "token": "a",
+        "header": "AgentCreds-A2A-Principal/1.YQ"
+      },
+      {
+        "token": "token-with_url+unsafe/chars=and spaces \u00e9",
+        "header": "AgentCreds-A2A-Principal/1.dG9rZW4td2l0aF91cmwrdW5zYWZlL2NoYXJzPWFuZCBzcGFjZXMgw6k"
+      }
+    ],
+    "malformed_principal_headers": [
+      "SomeOtherScheme/1.0 abc",
+      "AgentCreds-A2A-Principal/2.whatever",
+      ""
+    ],
+    "bound_args_headers": [
+      {
+        "bound": "{\"q\":\"caf\u00e9\"}",
+        "header": "eyJxIjoiY2Fmw6kifQ"
+      },
+      {
+        "bound": "{\"q\":\"caf\\u00e9\"}",
+        "header": "eyJxIjoiY2FmXHUwMGU5In0"
+      },
+      {
+        "bound": "{}",
+        "header": "e30"
+      }
+    ],
+    "octets_parse_semantic": [
+      {
+        "bound": "{\"q\":\"caf\u00e9\",\"n\":1}",
+        "args": {
+          "q": "caf\u00e9",
+          "n": 1
+        },
+        "equal": true
+      },
+      {
+        "bound": "{\"q\":\"caf\\u00e9\",\"n\":1}",
+        "args": {
+          "q": "caf\u00e9",
+          "n": 1
+        },
+        "equal": true
+      },
+      {
+        "bound": "{\"n\":1.0,\"q\":\"x\"}",
+        "args": {
+          "q": "x",
+          "n": 1
+        },
+        "equal": true
+      },
+      {
+        "bound": "{\"q\":\"cafe\"}",
+        "args": {
+          "q": "caf\u00e9"
+        },
+        "equal": false
+      },
+      {
+        "bound": "{\"a\":[1,2,3]}",
+        "args": {
+          "a": [
+            1,
+            2,
+            3
+          ]
+        },
+        "equal": true
+      },
+      {
+        "bound": "{\"a\":[1,2,3]}",
+        "args": {
+          "a": [
+            1,
+            3,
+            2
+          ]
+        },
+        "equal": false
+      },
+      {
+        "bound": "{\"nested\":{\"x\":null,\"y\":true}}",
+        "args": {
+          "nested": {
+            "y": true,
+            "x": null
+          }
+        },
+        "equal": true
+      }
+    ]
+  }
+}

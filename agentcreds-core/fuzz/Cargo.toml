@@ -1,0 +1,49 @@
+[package]
+name = "agentcreds-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+# Its own workspace, deliberately. The fuzz crate is not a member of the SDK workspace:
+# it needs a nightly toolchain and a sanitizer profile, and pulling it in would put
+# `libfuzzer-sys` into the SDK's lockfile and its `cargo-deny` scope for a crate that is
+# never shipped. Keeping it separate is also what stops `cargo test` at the workspace
+# root trying to build it on stable, where it cannot link.
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.agentcreds-core]
+path = ".."
+
+[[bin]]
+name = "token_decode"
+path = "fuzz_targets/token_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "verify_rooted"
+path = "fuzz_targets/verify_rooted.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "presentation_verify"
+path = "fuzz_targets/presentation_verify.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "status_list"
+path = "fuzz_targets/status_list.rs"
+test = false
+doc = false
+bench = false

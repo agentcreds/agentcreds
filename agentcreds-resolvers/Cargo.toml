@@ -1,0 +1,35 @@
+[package]
+name = "agentcreds-resolvers"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "Networked DID method resolvers for AgentCreds (did:web, DIF Universal Resolver, did:cheqd / did:indy). Kept out of agentcreds-core so the core has no network dependency and is unconditionally offline; each resolver implements agentcreds_core::did::DidResolver."
+license = "Apache-2.0"
+repository = "https://github.com/agentcreds/agentcreds"
+keywords = ["did", "did-resolver", "did-web", "ssi", "ai-agents"]
+categories = ["cryptography", "authentication"]
+
+[features]
+# The crate exists to provide resolvers, so the useful network resolvers are on by
+# default; the ledger stubs are opt-in. `reqwest` (the HTTP client) is pulled only
+# by the resolvers that make network calls.
+default = ["resolver-web", "resolver-universal"]
+resolver-web = ["reqwest"]
+resolver-universal = ["reqwest"]
+resolver-cheqd = []
+resolver-indy = []
+
+[dependencies]
+# `version` alongside `path` is REQUIRED, not decorative: a path-only dependency
+# resolves to `*` for anyone consuming the published crate, which `cargo deny` reports
+# as a wildcard and `cargo publish` rejects outright. The path is used in-workspace;
+# the version is what a crates.io consumer gets.
+agentcreds-core = { path = "../agentcreds-core", version = "0.1.0" }
+
+# HTTP client for did:web + the DIF Universal Resolver (rustls only - no system
+# OpenSSL). This is the network dependency that no longer lives in agentcreds-core.
+reqwest = { version = "0.12", optional = true, features = ["blocking", "rustls-tls", "json"] }
+
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

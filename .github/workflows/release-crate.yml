@@ -1,0 +1,58 @@
+name: Release (crates.io)
+
+# Publishes the Rust crates to crates.io. Trigger by pushing a tag like `v0.1.0`.
+# Requires a publish-scoped CARGO_REGISTRY_TOKEN secret on this repo.
+#
+# `agentcreds-resolvers` depends on `agentcreds-core`, so core is published first;
+# crates.io needs a moment to index it before the dependent publish succeeds, hence
+# the retry loop.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Keyless build provenance (added 2026-09-06, matching the other release workflows).
+  id-token: write
+  attestations: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Verify the crates build and test
+        run: cargo test -p agentcreds-core --locked
+
+      # `--dry-run` produces the exact .crate archives that will be uploaded, so those
+      # files are what get attested - not a separately-built copy nobody consumes.
+      # crates.io does not ingest attestations yet, so verification is via GitHub
+      # (`gh attestation verify <file>.crate --repo <owner>/<repo>`); still worth one
+      # step. Attested BEFORE publish so no uploaded artifact is ever unattested.
+      - name: Package for attestation
+        run: |
+          cargo publish -p agentcreds-core --dry-run --locked
+      - name: Attest build provenance (core)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: target/package/*.crate
+
+      - name: Publish agentcreds-core
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p agentcreds-core --locked
+      - name: Publish agentcreds-resolvers (retry until core is indexed)
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if cargo publish -p agentcreds-resolvers --locked; then
+              exit 0
+            fi
+            echo "resolvers publish failed (attempt $attempt) - core may not be indexed yet; retrying in 30s"
+            sleep 30
+          done
+          echo "::error::agentcreds-resolvers failed to publish after retries"
+          exit 1

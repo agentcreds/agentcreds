@@ -1,0 +1,10 @@
+Apache License, Version 2.0
+SPDX-License-Identifier: Apache-2.0
+
+Copyright (c) AgentCreds and contributors.
+
+This package is part of the AgentCreds SDK and is licensed under the Apache
+License, Version 2.0. The full canonical license text is published at
+https://www.apache.org/licenses/LICENSE-2.0 and is written into this file by
+`scripts/fetch-licenses.sh` (run before publishing). The SPDX identifier above
+and the package manifest's `license` field are authoritative.
