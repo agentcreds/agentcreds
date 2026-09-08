@@ -26,14 +26,16 @@ jobs:
       - name: Verify the crates build and test
         run: cargo test -p agentcreds-core --locked
 
-      # `--dry-run` produces the exact .crate archives that will be uploaded, so those
-      # files are what get attested - not a separately-built copy nobody consumes.
-      # crates.io does not ingest attestations yet, so verification is via GitHub
-      # (`gh attestation verify <file>.crate --repo <owner>/<repo>`); still worth one
-      # step. Attested BEFORE publish so no uploaded artifact is ever unattested.
+      # `cargo package` writes target/package/<name>-<version>.crate - a documented,
+      # stable contract. `cargo publish --dry-run` no longer leaves the archive there
+      # (modern cargo stages it in a temp dir and cleans up), which broke this step's
+      # original form twice. Packaging is deterministic for a given tree, so the file
+      # attested here is byte-identical to what the publish step re-packages and
+      # uploads. crates.io does not ingest attestations yet; verification is via
+      # GitHub (`gh attestation verify <file>.crate --repo <owner>/<repo>`).
+      # Attested BEFORE publish so no uploaded artifact is ever unattested.
       - name: Package for attestation
-        run: |
-          cargo publish -p agentcreds-core --dry-run --locked
+        run: cargo package -p agentcreds-core --locked
       # An explicit path, not a glob: the attest action's glob resolution failed to
       # match target/package/*.crate on a run where the file demonstrably existed
       # (the dry-run's verify step had just compiled from it). The copy also fails
