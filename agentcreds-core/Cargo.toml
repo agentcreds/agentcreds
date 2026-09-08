@@ -6,7 +6,9 @@ rust-version = "1.88"
 description = "Cryptographic core for AgentCreds - verifiable, attenuable delegation for AI agents, verified offline"
 license = "Apache-2.0"
 repository = "https://github.com/agentcreds/agentcreds"
-keywords = ["ssi", "did", "verifiable-credentials", "ai-agents", "zero-trust"]
+# crates.io caps keywords at 20 chars ("verifiable-credentials" is 22 and hard-fails
+# the publish).
+keywords = ["ssi", "did", "credentials", "ai-agents", "zero-trust"]
 categories = ["cryptography", "authentication"]
 
 [lib]
