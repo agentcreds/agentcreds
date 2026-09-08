@@ -34,10 +34,16 @@ jobs:
       - name: Package for attestation
         run: |
           cargo publish -p agentcreds-core --dry-run --locked
+      # An explicit path, not a glob: the attest action's glob resolution failed to
+      # match target/package/*.crate on a run where the file demonstrably existed
+      # (the dry-run's verify step had just compiled from it). The copy also fails
+      # with a readable shell error if packaging ever stops producing the file.
+      - name: Stage the crate for attestation
+        run: cp target/package/agentcreds-core-*.crate agentcreds-core.crate
       - name: Attest build provenance (core)
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: target/package/*.crate
+          subject-path: agentcreds-core.crate
 
       - name: Publish agentcreds-core
         env:
