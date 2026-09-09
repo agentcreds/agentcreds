@@ -133,6 +133,25 @@ Linux-only where a repo sets the `CI_LINUX_ONLY` variable - see
 bindings rebuild loop, and code conventions are in
 [CONTRIBUTING.md](CONTRIBUTING.md); release notes in [CHANGELOG.md](CHANGELOG.md).
 
+## Beta testers wanted
+
+AgentCreds 0.1.0 is newly public and we are actively recruiting beta testers -
+people building agent systems who will exercise a real use case and tell us where
+the SDK fights them, **while breaking changes are still cheap**. The wire formats
+are already pinned by conformance vectors ([STABILITY.md](STABILITY.md)); the
+language APIs are what your feedback shapes before they freeze at 1.0.
+
+What we most want exercised: the MCP middleware guarding a real tool, delegation
+chains deeper than one hop, the A2A headers between two of your services, and
+revocation under your latency expectations.
+
+- **Bugs** -> [issue: bug report](../../issues/new?template=bug.md)
+- **"It works but the API fought me"** -> [issue: API friction](../../issues/new?template=api-friction.md) - the highest-value pre-1.0 feedback there is
+- **Vulnerabilities** -> privately, per [SECURITY.md](SECURITY.md) - never a public issue
+
+Substantive beta feedback gets named credit in the release notes (opt-in) and a
+direct line while your integration is live.
+
 ## Security
 
 - `#![forbid(unsafe_code)]` in the core; private keys zeroized on drop.
